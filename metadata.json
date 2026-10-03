@@ -1,0 +1,6 @@
+{
+  "name": "CivProcure – Purchase Management System",
+  "description": "Enterprise Civil Construction & Real Estate Purchase Management System with complete procurement lifecycle, multi-tier approvals, 3-way matching, inventory, payments, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
