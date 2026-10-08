@@ -12,6 +12,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { DocumentTimeline } from '../../components/common/DocumentTimeline';
 import { ApprovalActionModal } from '../../components/common/ApprovalActionModal';
 import { AuditHistoryModal } from '../../components/common/AuditHistoryModal';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -68,35 +69,28 @@ export const PurchaseRequisitionsPage: React.FC = () => {
     const itemObj = items.find(i => i.id === itemId || (itemName && i.item_name.toLowerCase() === itemName.toLowerCase()));
     const normName = itemName?.toLowerCase() || itemObj?.item_name.toLowerCase() || '';
 
-    // 1. Direct match for selected site
     const siteMatch = stocks.find(
       s => (s.item_id === itemId || s.item_name.toLowerCase() === normName) &&
            (!siteId || s.site_id === siteId)
     );
 
-    // 2. Direct match for selected project if site not matched
     const projMatch = stocks.find(
       s => (s.item_id === itemId || s.item_name.toLowerCase() === normName) &&
            (!projectId || s.project_id === projectId)
     );
 
-    // 3. Fallback across all other sites/locations
     const otherSiteMatches = stocks.filter(
       s => (s.item_id === itemId || s.item_name.toLowerCase() === normName) &&
            (!siteId || s.site_id !== siteId) &&
            s.current_quantity > 0
     );
 
-    // 4. Any general match
     const anyMatch = stocks.find(
       s => s.item_id === itemId || s.item_name.toLowerCase() === normName
     );
 
     const reorderLvl = siteMatch?.reorder_level || projMatch?.reorder_level || anyMatch?.reorder_level || itemObj?.reorder_level || 0;
     
-    // If siteId is specified and we have a siteMatch, use its quantity;
-    // if siteId is specified but no match exists at that site, site quantity is 0!
-    // if siteId is not specified, use anyMatch or project match.
     const currentQty = siteMatch
       ? siteMatch.current_quantity
       : siteId
@@ -155,7 +149,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
   }, []);
 
   const handleOpenCreate = async () => {
-    // Refresh latest stock ledger before opening modal to ensure live remaining stock
     const [latestStocks, latestItems, latestProjects, latestSites] = await Promise.all([
       db.getStockLedger(),
       db.getItems(),
@@ -200,7 +193,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
   };
 
   const handleAddItemRow = () => {
-    // Find an item that has not yet been added to line items, or pick next in sequence
     const unselected = items.find(it => !lineItems.some(li => li.item_id === it.id));
     const nextItem = unselected || items[lineItems.length % items.length] || items[0];
     if (!nextItem) return;
@@ -333,7 +325,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
     setIsAuditOpen(true);
   };
 
-  // Tab & Search Filtering
   const filteredPrs = prs.filter(pr => {
     if (selectedProjectId !== 'ALL' && pr.project_id !== selectedProjectId) return false;
     if (activeTab === 'PENDING' && !['PENDING_APPROVAL', 'SUBMITTED'].includes(pr.status)) return false;
@@ -529,7 +520,7 @@ export const PurchaseRequisitionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* PR Detail Modal with Visual Lifecycle Timeline */}
+      {/* PR Detail Modal */}
       {isDetailOpen && selectedPr && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -557,7 +548,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Document Timeline Component (Section 37) */}
               <DocumentTimeline
                 steps={[
                   { key: 'PR', label: 'PR Created', docNumber: selectedPr.pr_number, date: selectedPr.pr_date, isComplete: true },
@@ -572,7 +562,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                 ]}
               />
 
-              {/* Meta Details */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
                 <div>
                   <span className="text-slate-400 block text-[11px]">Requested By</span>
@@ -593,7 +582,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Line Items Table */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
                   Requisition Line Items ({selectedPr.items?.length || 0})
@@ -752,11 +740,10 @@ export const PurchaseRequisitionsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Project *</label>
-                  <select
-                    required
+                  <CustomSelect
+                    options={projects.map(p => ({ label: p.project_name, value: p.id }))}
                     value={formData.project_id}
-                    onChange={e => {
-                      const projId = e.target.value;
+                    onChange={projId => {
                       const siteForProj = sites.find(s => s.project_id === projId);
                       setFormData({
                         ...formData,
@@ -764,27 +751,19 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                         site_id: siteForProj?.id || sites[0]?.id || '',
                       });
                     }}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5"
-                  >
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>{p.project_name}</option>
-                    ))}
-                  </select>
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Site / Store Location *</label>
-                  <select
-                    required
-                    value={formData.site_id}
-                    onChange={e => setFormData({ ...formData, site_id: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5"
-                  >
-                    {sites
+                  <CustomSelect
+                    options={sites
                       .filter(s => !formData.project_id || s.project_id === formData.project_id)
-                      .map(s => (
-                        <option key={s.id} value={s.id}>{s.site_name}</option>
-                      ))}
-                  </select>
+                      .map(s => ({ label: s.site_name, value: s.id }))}
+                    value={formData.site_id}
+                    onChange={siteId => setFormData({ ...formData, site_id: siteId })}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -800,16 +779,17 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Priority</label>
-                  <select
+                  <CustomSelect
+                    options={[
+                      { label: 'LOW', value: 'LOW' },
+                      { label: 'MEDIUM', value: 'MEDIUM' },
+                      { label: 'HIGH', value: 'HIGH' },
+                      { label: 'URGENT', value: 'URGENT' }
+                    ]}
                     value={formData.priority}
-                    onChange={e => setFormData({ ...formData, priority: e.target.value as any })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-blue-600"
-                  >
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="URGENT">URGENT</option>
-                  </select>
+                    onChange={val => setFormData({ ...formData, priority: val })}
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Material Classification</label>
@@ -822,7 +802,7 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Line items section with live remaining stock visibility */}
+              {/* Line items section */}
               <div className="border border-slate-200 rounded-lg p-3.5 space-y-3 bg-slate-50/70">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200/80 pb-2.5">
                   <div>
@@ -850,7 +830,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
 
                     return (
                       <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-2.5 transition-all hover:border-slate-300">
-                        {/* Row Header: Item Selector & Cost Code */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="flex items-center space-x-2 flex-1">
                             <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 font-mono font-bold text-[10px] flex items-center justify-center shrink-0">
@@ -860,17 +839,12 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                               <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">
                                 Select Item from Master Catalog *
                               </label>
-                              <select
+                              <CustomSelect
+                                options={items.map(it => ({ label: `${it.item_code} - ${it.item_name} (${it.unit || it.uom})`, value: it.id }))}
                                 value={item.item_id}
-                                onChange={e => handleItemSelect(idx, e.target.value)}
-                                className="w-full border border-slate-200 rounded-md p-1.5 text-xs bg-white focus:ring-1 focus:ring-blue-500 font-medium text-slate-900"
-                              >
-                                {items.map(it => (
-                                  <option key={it.id} value={it.id}>
-                                    {it.item_code} - {it.item_name} ({it.unit || it.uom})
-                                  </option>
-                                ))}
-                              </select>
+                                onChange={itemId => handleItemSelect(idx, itemId)}
+                                className="w-full"
+                              />
                             </div>
                           </div>
 
@@ -879,21 +853,16 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                               <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">
                                 Budget Cost Code
                               </label>
-                              <select
+                              <CustomSelect
+                                options={costCodes.map(cc => ({ label: `${cc.code} - ${cc.name}`, value: cc.id }))}
                                 value={item.cost_code_id}
-                                onChange={e => {
+                                onChange={ccId => {
                                   const copy = [...lineItems];
-                                  copy[idx].cost_code_id = e.target.value;
+                                  copy[idx].cost_code_id = ccId;
                                   setLineItems(copy);
                                 }}
-                                className="w-full border border-slate-200 rounded-md p-1.5 text-xs bg-white font-mono text-slate-700"
-                              >
-                                {costCodes.map(cc => (
-                                  <option key={cc.id} value={cc.id}>
-                                    {cc.code} - {cc.name}
-                                  </option>
-                                ))}
-                              </select>
+                                className="w-full"
+                              />
                             </div>
 
                             <button
@@ -907,7 +876,7 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* LIVE REMAINING STOCK & LOCATION CARD - Prominently visible immediately upon adding row */}
+                        {/* LIVE REMAINING STOCK CARD */}
                         <div className={`p-2.5 rounded-lg border text-xs transition-colors ${
                           stock.isZero
                             ? 'bg-rose-50/70 border-rose-200'
@@ -916,7 +885,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                             : 'bg-emerald-50/70 border-emerald-200'
                         }`}>
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            {/* Stock Metric */}
                             <div className="flex items-center space-x-2.5">
                               <div className={`p-1.5 rounded-md ${
                                 stock.isZero
@@ -965,7 +933,6 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Storage Location & Cross-Site Availability */}
                             <div className="text-right sm:border-l sm:border-slate-200/60 sm:pl-3 flex flex-col justify-center">
                               <div className="flex items-center justify-start sm:justify-end text-[11px] font-medium text-slate-700">
                                 <MapPin className="w-3.5 h-3.5 text-blue-600 mr-1 shrink-0" />
@@ -984,7 +951,7 @@ export const PurchaseRequisitionsPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Input Row: Quantities, Rate, Calculation & Remarks */}
+                        {/* Input Row */}
                         <div className="grid grid-cols-12 gap-2.5 items-center pt-1">
                           <div className="col-span-6 sm:col-span-3">
                             <label className="block text-[10px] text-slate-600 font-semibold mb-0.5">
