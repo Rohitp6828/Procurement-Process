@@ -12,6 +12,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { DocumentTimeline } from '../../components/common/DocumentTimeline';
 import { ApprovalActionModal } from '../../components/common/ApprovalActionModal';
 import { AuditHistoryModal } from '../../components/common/AuditHistoryModal';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -259,8 +260,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
       remaining_po_quantity: Math.max(0, gi.remaining_po_quantity - gi.accepted_quantity),
       current_stock: gi.current_stock,
     }));
-
-    const totalRej = formattedItems.reduce((acc, it) => acc + it.rejected_quantity, 0);
 
     const newGrn: GoodsReceivedNote = {
       id: grnId,
@@ -534,7 +533,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Document Lifecycle Flow */}
               <div className="print:hidden">
                 <DocumentTimeline
                   steps={[
@@ -548,7 +546,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                 />
               </div>
 
-              {/* Delivery Receipt Header Details */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
                 <div>
                   <span className="text-slate-400 block text-[11px]">Vendor Challan No.</span>
@@ -574,7 +571,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Line Items Receiving & QC Acceptance */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -658,7 +654,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* QC Verification Highlights */}
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
                 <span className="font-bold text-slate-800 block">Quality Control Inspection Audit</span>
                 <div className="grid grid-cols-3 gap-3">
@@ -698,7 +693,7 @@ export const GoodsReceivedNotesPage: React.FC = () => {
         </div>
       )}
 
-      {/* QC Inspection Workflow Modal (Section 26) */}
+      {/* QC Inspection Workflow Modal */}
       {isQcOpen && selectedGrn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
@@ -733,7 +728,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Staged Items, Exact Locations & Stock impact */}
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-800 flex items-center">
@@ -854,7 +848,7 @@ export const GoodsReceivedNotesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Material Rejection Slip Modal (Section 27) */}
+      {/* Material Rejection Slip Modal */}
       {isRejectionSlipOpen && selectedGrn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-xl overflow-hidden">
@@ -955,19 +949,15 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Select Purchase Order *</label>
-                  <select
-                    required
+                  <CustomSelect
+                    options={[
+                      { label: '-- Choose Approved PO --', value: '' },
+                      ...pos.map(p => ({ label: `${p.po_number} - ${p.vendor_name} (${p.project_name})`, value: p.id }))
+                    ]}
                     value={formData.po_id}
-                    onChange={e => handlePoChange(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 font-mono text-blue-600 font-semibold"
-                  >
-                    <option value="">-- Choose Approved PO --</option>
-                    {pos.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.po_number} - {p.vendor_name} ({p.project_name})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={poId => handlePoChange(poId)}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -1074,11 +1064,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
-
-                  <div className="flex items-center text-[11px] text-slate-500 bg-white/70 px-2.5 py-1.5 rounded-lg border border-slate-200/60">
-                    <Info className="w-3.5 h-3.5 text-blue-500 mr-1.5 shrink-0" />
-                    <span>Review current site store inventory and exact storage location for each item from the Purchase Order. Remaining PO quantities and projected store balances update dynamically as you enter accepted quantities.</span>
-                  </div>
                 </div>
               )}
 
@@ -1108,7 +1093,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
 
                       return (
                         <div key={idx} className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3.5 space-y-3 transition-all hover:border-slate-300">
-                          {/* Item Header */}
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
                             <div className="flex items-start space-x-2">
                               <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 shrink-0 mt-0.5">
@@ -1144,9 +1128,7 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Dual Intelligence Panels: PO Balance & Site Store Stock */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                            {/* Panel 1: PO Quantities & Remaining Balance */}
                             <div className="bg-blue-50/40 border border-blue-200/80 rounded-lg p-2.5 text-xs space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-blue-900 flex items-center text-[11px]">
@@ -1179,7 +1161,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Remaining PO Status after this delivery */}
                               <div className="flex items-center justify-between text-[11px] pt-0.5">
                                 <span className="text-slate-500">Remaining After This GRN:</span>
                                 {isOverReceived ? (
@@ -1200,7 +1181,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Panel 2: Store Stock & Exact Physical Location */}
                             <div className="bg-emerald-50/30 border border-emerald-200/80 rounded-lg p-2.5 text-xs space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-emerald-950 flex items-center text-[11px]">
@@ -1236,7 +1216,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Exact Storage Location display & edit */}
                               <div className="flex items-center justify-between text-[11px] pt-0.5">
                                 <span className="text-slate-500 flex items-center">
                                   <MapPin className="w-3 h-3 text-blue-600 mr-1 shrink-0" />
@@ -1249,7 +1228,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Quantities Entry Row & Custom Location */}
                           <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200 space-y-2.5">
                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 items-center">
                               <div>
@@ -1340,7 +1318,6 @@ export const GoodsReceivedNotesPage: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Put-Away Storage Location Input & Preset Selector */}
                             <div className="pt-1.5 border-t border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <div className="flex items-center space-x-1.5 text-slate-600 text-xs">
                                 <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
