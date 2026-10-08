@@ -4,6 +4,7 @@ import { db } from '../../lib/db';
 import { MaterialTransfer, Project, Site, Item } from '../../types';
 import { formatDate } from '../../lib/utils';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -288,43 +289,35 @@ export const MaterialTransferPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Dispatching Source Site *</label>
-                  <select
-                    required
+                  <CustomSelect
+                    options={sites.map(s => ({ label: `${s.site_name} (${s.site_code})`, value: s.id }))}
                     value={formData.from_site_id}
-                    onChange={e => {
-                      const site = sites.find(s => s.id === e.target.value);
+                    onChange={siteId => {
+                      const site = sites.find(s => s.id === siteId);
                       setFormData({
                         ...formData,
-                        from_site_id: e.target.value,
+                        from_site_id: siteId,
                         from_project_id: site?.project_id || '',
                       });
                     }}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 bg-white font-medium"
-                  >
-                    {sites.map(s => (
-                      <option key={s.id} value={s.id}>{s.site_name} ({s.site_code})</option>
-                    ))}
-                  </select>
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">Receiving Destination Site *</label>
-                  <select
-                    required
+                  <CustomSelect
+                    options={sites.map(s => ({ label: `${s.site_name} (${s.site_code})`, value: s.id }))}
                     value={formData.to_site_id}
-                    onChange={e => {
-                      const site = sites.find(s => s.id === e.target.value);
+                    onChange={siteId => {
+                      const site = sites.find(s => s.id === siteId);
                       setFormData({
                         ...formData,
-                        to_site_id: e.target.value,
+                        to_site_id: siteId,
                         to_project_id: site?.project_id || '',
                       });
                     }}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 bg-white font-medium"
-                  >
-                    {sites.map(s => (
-                      <option key={s.id} value={s.id}>{s.site_name} ({s.site_code})</option>
-                    ))}
-                  </select>
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -366,20 +359,17 @@ export const MaterialTransferPage: React.FC = () => {
                   {transferItems.map((item, idx) => (
                     <div key={idx} className="bg-white p-2.5 rounded-lg border border-slate-200 grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-8">
-                        <select
+                        <CustomSelect
+                          options={items.map(it => ({ label: `${it.item_name} (${it.uom})`, value: it.id }))}
                           value={item.item_id}
-                          onChange={e => {
-                            const it = items.find(x => x.id === e.target.value);
+                          onChange={itemId => {
+                            const it = items.find(x => x.id === itemId);
                             const copy = [...transferItems];
                             copy[idx] = { ...copy[idx], item_id: it!.id, item_name: it!.item_name, uom: it!.uom };
                             setTransferItems(copy);
                           }}
-                          className="w-full border border-slate-200 rounded-md p-1 text-xs font-semibold"
-                        >
-                          {items.map(it => (
-                            <option key={it.id} value={it.id}>{it.item_name} ({it.uom})</option>
-                          ))}
-                        </select>
+                          className="w-full"
+                        />
                       </div>
 
                       <div className="col-span-4">
