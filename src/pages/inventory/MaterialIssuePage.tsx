@@ -4,6 +4,7 @@ import { db } from '../../lib/db';
 import { MaterialIssue, Project, Site, Item } from '../../types';
 import { formatDate } from '../../lib/utils';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -273,11 +274,10 @@ export const MaterialIssuePage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Project & Site *</label>
-                  <select
-                    required
+                  <CustomSelect
+                    options={projects.map(p => ({ label: p.project_name, value: p.id }))}
                     value={formData.project_id}
-                    onChange={e => {
-                      const pId = e.target.value;
+                    onChange={pId => {
                       const site = sites.find(s => s.project_id === pId) || sites[0];
                       setFormData({
                         ...formData,
@@ -285,12 +285,8 @@ export const MaterialIssuePage: React.FC = () => {
                         site_id: site?.id || '',
                       });
                     }}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-800"
-                  >
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>{p.project_name}</option>
-                    ))}
-                  </select>
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Work Order Reference</label>
@@ -344,17 +340,12 @@ export const MaterialIssuePage: React.FC = () => {
                     <div key={idx} className="bg-white p-2.5 rounded-lg border border-slate-200 grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-6">
                         <label className="block text-[10px] text-slate-400 mb-0.5">Item *</label>
-                        <select
+                        <CustomSelect
+                          options={items.map(it => ({ label: `${it.item_code} - ${it.item_name}`, value: it.id }))}
                           value={item.item_id}
-                          onChange={e => handleItemSelect(idx, e.target.value)}
-                          className="w-full border border-slate-200 rounded-md p-1 text-xs"
-                        >
-                          {items.map(it => (
-                            <option key={it.id} value={it.id}>
-                              {it.item_code} - {it.item_name}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={itemId => handleItemSelect(idx, itemId)}
+                          className="w-full"
+                        />
                       </div>
 
                       <div className="col-span-2">
