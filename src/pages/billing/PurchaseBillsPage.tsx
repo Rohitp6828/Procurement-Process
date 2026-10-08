@@ -10,6 +10,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { DocumentTimeline } from '../../components/common/DocumentTimeline';
 import { ApprovalActionModal } from '../../components/common/ApprovalActionModal';
 import { AuditHistoryModal } from '../../components/common/AuditHistoryModal';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -172,7 +173,6 @@ export const PurchaseBillsPage: React.FC = () => {
       const qtyVar = bi.invoice_quantity - bi.grn_accepted_quantity;
       const rateVar = bi.invoice_rate - bi.po_rate;
 
-      // Tolerance: Qty 0%, Rate 0%
       const lineDiscrepancy = Math.abs(qtyVar) > 0.001 || Math.abs(rateVar) > 0.01;
       if (lineDiscrepancy) hasVariance = true;
 
@@ -206,7 +206,6 @@ export const PurchaseBillsPage: React.FC = () => {
 
     const totalBillAmount = taxableAmount + taxAmount;
 
-    // Deductions
     const tdsAmt = taxableAmount * (formData.tds_rate_percent / 100);
     const gstTdsAmt = taxableAmount * (formData.gst_tds_rate_percent / 100);
     const retentionAmt = totalBillAmount * (formData.retention_percent / 100);
@@ -507,7 +506,7 @@ export const PurchaseBillsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bill Detail & 3-Way Matching Engine Matrix Modal (Section 32, 34) */}
+      {/* Bill Detail Modal */}
       {isDetailOpen && selectedBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -535,7 +534,6 @@ export const PurchaseBillsPage: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Document Lifecycle Flow */}
               <div className="print:hidden">
                 <DocumentTimeline
                   steps={[
@@ -549,7 +547,6 @@ export const PurchaseBillsPage: React.FC = () => {
                 />
               </div>
 
-              {/* 3-Way Match Verification Matrix Table */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -614,7 +611,6 @@ export const PurchaseBillsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Statutory Deductions & Net Disbursement Settlement Box (Section 34) */}
               <div className="grid grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
                 <div className="space-y-2">
                   <span className="font-bold text-slate-800 block text-xs uppercase tracking-wider">
@@ -713,19 +709,15 @@ export const PurchaseBillsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Select Accepted GRN *</label>
-                  <select
-                    required
+                  <CustomSelect
+                    options={[
+                      { label: '-- Choose Approved GRN --', value: '' },
+                      ...grns.map(g => ({ label: `${g.grn_number} - ${g.vendor_name} (PO: ${g.po_number})`, value: g.id }))
+                    ]}
                     value={formData.grn_id}
-                    onChange={e => handleGrnSelect(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-blue-600"
-                  >
-                    <option value="">-- Choose Approved GRN --</option>
-                    {grns.map(g => (
-                      <option key={g.id} value={g.id}>
-                        {g.grn_number} - {g.vendor_name} (PO: {g.po_number})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={grnId => handleGrnSelect(grnId)}
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">PO Reference (Auto)</label>
@@ -883,7 +875,7 @@ export const PurchaseBillsPage: React.FC = () => {
         />
       )}
 
-      {/* Debit Note Creation Modal (Section 33) */}
+      {/* Debit Note Modal */}
       {isDebitNoteOpen && selectedBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden">
