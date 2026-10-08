@@ -5,6 +5,7 @@ import { db } from '../../lib/db';
 import { Item, MaterialSpecification } from '../../types';
 import { formatCurrency } from '../../lib/utils';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { MasterDataSyncHeader } from '../../components/common/MasterDataSyncHeader';
@@ -99,7 +100,6 @@ export const ItemMasterPage: React.FC = () => {
     }
 
     try {
-      // Normalize to 6-digit numeric item code
       const numericCode = db.formatNumericItemCode(formData.item_code);
 
       const payload: Item = {
@@ -171,7 +171,6 @@ export const ItemMasterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs between Item Master and Specifications Master */}
       <div className="flex items-center space-x-2 border-b border-slate-200 pb-2">
         <Link
           to="/masters/items"
@@ -189,7 +188,6 @@ export const ItemMasterPage: React.FC = () => {
         </Link>
       </div>
 
-      {/* Supabase Master Data Sync Bar */}
       <MasterDataSyncHeader
         tableName="items"
         title="Items"
@@ -332,14 +330,15 @@ export const ItemMasterPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Status</label>
-                  <select
+                  <CustomSelect
+                    options={[
+                      { label: 'ACTIVE', value: 'ACTIVE' },
+                      { label: 'INACTIVE', value: 'INACTIVE' }
+                    ]}
                     value={formData.status}
-                    onChange={e => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5"
-                  >
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="INACTIVE">INACTIVE</option>
-                  </select>
+                    onChange={val => setFormData({ ...formData, status: val })}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -367,20 +366,21 @@ export const ItemMasterPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Unit of Measure (UOM) *</label>
-                  <select
+                  <CustomSelect
+                    options={[
+                      { label: 'Bags (Cement)', value: 'Bags' },
+                      { label: 'MT (Metric Ton - Steel/Aggregates)', value: 'MT' },
+                      { label: 'Cum (Cubic Meter - RMC/Sand)', value: 'Cum' },
+                      { label: 'Sqft (Tiles, Flooring, Granite)', value: 'Sqft' },
+                      { label: 'Nos (Blocks, Doors, Fixtures)', value: 'Nos' },
+                      { label: 'Rmt (Pipes, Conduit, Railing)', value: 'Rmt' },
+                      { label: 'Kg (Hardware, Binding Wire)', value: 'Kg' },
+                      { label: 'Ltr (Paints, Waterproofing Chemicals)', value: 'Ltr' }
+                    ]}
                     value={formData.uom}
-                    onChange={e => setFormData({ ...formData, uom: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5"
-                  >
-                    <option value="Bags">Bags (Cement)</option>
-                    <option value="MT">MT (Metric Ton - Steel/Aggregates)</option>
-                    <option value="Cum">Cum (Cubic Meter - RMC/Sand)</option>
-                    <option value="Sqft">Sqft (Tiles, Flooring, Granite)</option>
-                    <option value="Nos">Nos (Blocks, Doors, Fixtures)</option>
-                    <option value="Rmt">Rmt (Pipes, Conduit, Railing)</option>
-                    <option value="Kg">Kg (Hardware, Binding Wire)</option>
-                    <option value="Ltr">Ltr (Paints, Waterproofing Chemicals)</option>
-                  </select>
+                    onChange={val => setFormData({ ...formData, uom: val })}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -392,27 +392,30 @@ export const ItemMasterPage: React.FC = () => {
                   </label>
                   <span className="text-[10px] text-slate-400">Pulls from Specifications Master</span>
                 </div>
-                <select
-                  onChange={e => {
-                    const selected = specs.find(s => s.id === e.target.value);
-                    if (selected) {
-                      setFormData(prev => ({
-                        ...prev,
-                        category: selected.category || prev.category,
-                        specifications: `${selected.standard_code} ${selected.grade ? selected.grade + ' ' : ''}- ${selected.title}. Parameters: ${selected.technical_parameters.slice(0, 140)}...`,
-                      }));
-                      showToast(`Applied standard: ${selected.standard_code}`, 'info');
-                    }
-                  }}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-1.5 bg-slate-50 mb-2 text-slate-700"
-                >
-                  <option value="">-- Link to Specifications Master (IS/ASTM Code) --</option>
-                  {specs.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.spec_code} • {s.standard_code} ({s.grade || s.category}) - {s.title}
-                    </option>
-                  ))}
-                </select>
+                <div className="mb-2">
+                  <CustomSelect
+                    options={[
+                      { label: '-- Link to Specifications Master (IS/ASTM Code) --', value: '' },
+                      ...specs.map(s => ({
+                        label: `${s.spec_code} • ${s.standard_code} (${s.grade || s.category}) - ${s.title}`,
+                        value: s.id
+                      }))
+                    ]}
+                    value=""
+                    onChange={specId => {
+                      const selected = specs.find(s => s.id === specId);
+                      if (selected) {
+                        setFormData(prev => ({
+                          ...prev,
+                          category: selected.category || prev.category,
+                          specifications: `${selected.standard_code} ${selected.grade ? selected.grade + ' ' : ''}- ${selected.title}. Parameters: ${selected.technical_parameters.slice(0, 140)}...`,
+                        }));
+                        showToast(`Applied standard: ${selected.standard_code}`, 'info');
+                      }
+                    }}
+                    className="w-full"
+                  />
+                </div>
 
                 <label className="block text-slate-600 font-semibold mb-1">Technical Specifications Details</label>
                 <textarea
@@ -437,17 +440,18 @@ export const ItemMasterPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">GST Tax Rate (%)</label>
-                  <select
+                  <CustomSelect
+                    options={[
+                      { label: '0%', value: 0 },
+                      { label: '5% (Sand, Aggregates, Bricks)', value: 5 },
+                      { label: '12%', value: 12 },
+                      { label: '18% (Steel, RMC, Fixtures, Chemicals)', value: 18 },
+                      { label: '28% (Cement)', value: 28 }
+                    ]}
                     value={formData.gst_rate}
-                    onChange={e => setFormData({ ...formData, gst_rate: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5"
-                  >
-                    <option value="0">0%</option>
-                    <option value="5">5% (Sand, Aggregates, Bricks)</option>
-                    <option value="12">12%</option>
-                    <option value="18">18% (Steel, RMC, Fixtures, Chemicals)</option>
-                    <option value="28">28% (Cement)</option>
-                  </select>
+                    onChange={val => setFormData({ ...formData, gst_rate: Number(val) })}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -491,7 +495,7 @@ export const ItemMasterPage: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Bulk Excel Upload Modal */}
+
       <BulkExcelUploadModal
         isOpen={isBulkUploadOpen}
         onClose={() => setIsBulkUploadOpen(false)}
