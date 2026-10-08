@@ -14,6 +14,7 @@ import {
 import { db } from '../../lib/db';
 import { formatCurrency, formatNumber, formatDate } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import {
   Project, Site, Vendor, PurchaseRequisition, PurchaseOrder,
   GoodsReceivedNote, PurchaseBill, StockLedger
@@ -99,7 +100,6 @@ export const DashboardPage: React.FC = () => {
 
   // Critical Procurement KPIs computation
   const criticalKpis = useMemo(() => {
-    // 1. Pending Requisitions
     const pendingRequisitionsList = filteredData.fPrs.filter(p =>
       ['SUBMITTED', 'PENDING_APPROVAL', 'DRAFT'].includes(p.status)
     );
@@ -111,7 +111,6 @@ export const DashboardPage: React.FC = () => {
     const urgentPRCount = pendingRequisitionsList.filter(p => p.priority === 'URGENT' || p.priority === 'HIGH').length;
     const pendingApprovalCount = pendingRequisitionsList.filter(p => p.status === 'PENDING_APPROVAL').length;
 
-    // 2. Active POs
     const activePOsList = filteredData.fPos.filter(p =>
       ['APPROVED', 'PARTIALLY_RECEIVED', 'ISSUED', 'IN_DELIVERY'].includes(p.status) ||
       (p.status !== 'CANCELLED' && p.status !== 'CLOSED' && p.status !== 'DRAFT' && p.status !== 'REJECTED')
@@ -121,7 +120,6 @@ export const DashboardPage: React.FC = () => {
     const awaitingDeliveryCount = activePOsList.filter(p => p.status === 'APPROVED' || p.status === 'PARTIALLY_RECEIVED').length;
     const partiallyDeliveredCount = activePOsList.filter(p => p.status === 'PARTIALLY_RECEIVED').length;
 
-    // 3. Low Stock Alerts
     const siteStocks = stocks.filter(s => {
       if (selectedProjectId !== 'ALL' && s.project_id !== selectedProjectId) return false;
       return true;
@@ -209,7 +207,6 @@ export const DashboardPage: React.FC = () => {
     return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [filteredData.fPos]);
 
-  // Chart 4: Monthly Purchase Trend
   const monthlyTrendData = [
     { month: 'May 2026', value: 850000 },
     { month: 'Jun 2026', value: 1200000 },
@@ -218,8 +215,20 @@ export const DashboardPage: React.FC = () => {
     { month: 'Sep 2026', value: 1981500 },
   ];
 
-  // Chart Colors
   const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#6366F1', '#EC4899', '#8B5CF6'];
+
+  // Prepare vendor options for CustomSelect
+  const vendorOptions = [
+    { label: `All Vendors (${vendors.length})`, value: 'ALL' },
+    ...vendors.map(v => ({ label: v.vendor_name, value: v.id }))
+  ];
+
+  // Prepare workflow status options for CustomSelect
+  const statusOptions = [
+    { label: 'All Statuses', value: 'ALL' },
+    { label: 'Pending Authorizations', value: 'PENDING' },
+    { label: 'Approved / In Execution', value: 'APPROVED' }
+  ];
 
   return (
     <div className="space-y-6">
@@ -258,7 +267,7 @@ export const DashboardPage: React.FC = () => {
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -268,37 +277,28 @@ export const DashboardPage: React.FC = () => {
               type="date"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <label className="block text-[11px] text-slate-500 mb-1">Filter by Vendor</label>
-            <select
+            <CustomSelect
+              options={vendorOptions}
               value={selectedVendorId}
-              onChange={e => setSelectedVendorId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="ALL">All Vendors ({vendors.length})</option>
-              {vendors.map(v => (
-                <option key={v.id} value={v.id}>
-                  {v.vendor_name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedVendorId}
+              className="w-full"
+            />
           </div>
 
           <div>
             <label className="block text-[11px] text-slate-500 mb-1">Workflow Status</label>
-            <select
+            <CustomSelect
+              options={statusOptions}
               value={selectedStatus}
-              onChange={e => setSelectedStatus(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="PENDING">Pending Authorizations</option>
-              <option value="APPROVED">Approved / In Execution</option>
-            </select>
+              onChange={setSelectedStatus}
+              className="w-full"
+            />
           </div>
         </div>
       </div>
@@ -490,9 +490,8 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Cards Grid (12 Cards as requested in Section 4) */}
+      {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3.5">
-        {/* Total Projects */}
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-500">Total Projects</span>
@@ -502,7 +501,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-emerald-600 font-medium mt-0.5">{metrics.activeProjects} Active Sites</div>
         </div>
 
-        {/* Total Vendors */}
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-500">Total Vendors</span>
@@ -512,7 +510,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-slate-400 mt-0.5">Empanelled Suppliers</div>
         </div>
 
-        {/* Pending PR */}
         <div className="bg-white p-3.5 rounded-xl border border-amber-200/80 bg-amber-50/20 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-amber-800">Pending PR</span>
@@ -522,7 +519,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-amber-700 mt-0.5">Awaiting Approvals</div>
         </div>
 
-        {/* Approved PR */}
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-500">Approved PR</span>
@@ -532,7 +528,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-emerald-600 mt-0.5">Ready for RFQ / PO</div>
         </div>
 
-        {/* Pending PO */}
         <div className="bg-white p-3.5 rounded-xl border border-blue-200/80 bg-blue-50/20 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-blue-800">Pending PO</span>
@@ -542,7 +537,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-blue-700 mt-0.5">In Approval Queue</div>
         </div>
 
-        {/* Approved PO */}
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-500">Approved PO</span>
@@ -552,7 +546,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-emerald-600 mt-0.5">Committed Orders</div>
         </div>
 
-        {/* Pending GRN */}
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-500">Pending GRN</span>
@@ -562,7 +555,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-slate-400 mt-0.5">Site Receipts</div>
         </div>
 
-        {/* Pending Bills */}
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-500">Pending Bills</span>
@@ -572,7 +564,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-rose-600 mt-0.5">3-Way Matching Queue</div>
         </div>
 
-        {/* Total Purchase Value */}
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs sm:col-span-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-500">Total Purchase Value</span>
@@ -584,7 +575,6 @@ export const DashboardPage: React.FC = () => {
           <div className="text-[10px] text-slate-400 mt-0.5">Active Commitments</div>
         </div>
 
-        {/* Outstanding Payable */}
         <div className="bg-white p-3.5 rounded-xl border border-rose-200 bg-rose-50/20 shadow-2xs sm:col-span-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-rose-800">Outstanding Payables</span>
@@ -599,7 +589,6 @@ export const DashboardPage: React.FC = () => {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Monthly Purchase Trend */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -622,7 +611,6 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Project-Wise Purchase Value */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -645,7 +633,6 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Vendor-Wise Purchase */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -678,7 +665,6 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* PO Status Breakdown */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
             <div>
