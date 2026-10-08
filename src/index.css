@@ -1,1 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --color-brand: #af2024;
+}
+
+*, body, html {
+  font-family: var(--font-sans) !important;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f8fafc !important;
+  color: #1e1e1e !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modern Pastel Cards with Rounded Corners */
+.erp-card {
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+  padding: 1.5rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.erp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -4px rgba(175, 32, 36, 0.06);
+  border-color: rgba(175, 32, 36, 0.15);
+}
+
+/* Fully Rounded Pill Action Buttons */
+.erp-btn-pill {
+  border-radius: 9999px;
+  padding: 0.625rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.erp-btn-primary {
+  background: #af2024;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(175, 32, 36, 0.35);
+}
+
+.erp-btn-primary:hover {
+  background: #93191d;
+  box-shadow: 0 6px 20px rgba(175, 32, 36, 0.45);
+  transform: translateY(-1px);
+}
+
+/* Minimalist Inputs */
+.erp-input, 
+input[type="date"], 
+input[type="text"], 
+select {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.875rem !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.875rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.erp-input:focus, 
+input[type="date"]:focus, 
+input[type="text"]:focus, 
+select:focus {
+  background-color: #ffffff;
+  border-color: #af2024 !important;
+  box-shadow: 0 0 0 4px rgba(175, 32, 36, 0.08) !important;
+}
+
+/* Smooth custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 12px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
