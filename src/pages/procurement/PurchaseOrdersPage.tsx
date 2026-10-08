@@ -11,6 +11,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { DocumentTimeline } from '../../components/common/DocumentTimeline';
 import { ApprovalActionModal } from '../../components/common/ApprovalActionModal';
 import { AuditHistoryModal } from '../../components/common/AuditHistoryModal';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -27,16 +28,6 @@ export const PurchaseOrdersPage: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [prs, setPrs] = useState<PurchaseRequisition[]>([]);
   const [terms, setTerms] = useState<TermItem[]>([]);
-
-  // Modals for inline procurement connectivity
-  const [isQuickVendorOpen, setIsQuickVendorOpen] = useState(false);
-  const [isQuickProjectOpen, setIsQuickProjectOpen] = useState(false);
-  const [isQuickSiteOpen, setIsQuickSiteOpen] = useState(false);
-
-  // Quick form states
-  const [quickVendor, setQuickVendor] = useState({ vendor_name: '', gst_number: '', mobile: '', city: 'Pune' });
-  const [quickProject, setQuickProject] = useState({ project_name: '', client_name: '', location: 'Mumbai' });
-  const [quickSite, setQuickSite] = useState({ site_name: '', site_address: '', site_manager: 'Site Store Incharge' });
 
   // Filter & Search
   const [activeTab, setActiveTab] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'CANCELLED'>('ALL');
@@ -101,7 +92,6 @@ export const PurchaseOrdersPage: React.FC = () => {
     loadData();
   }, []);
 
-  // Handle URL query parameters if coming from comparison shortlist
   useEffect(() => {
     const vendorParam = searchParams.get('vendor_id');
     if (vendorParam && vendors.length > 0) {
@@ -500,7 +490,7 @@ export const PurchaseOrdersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* PO Detail & Print View Modal (Section 22) */}
+      {/* PO Detail & Print View Modal */}
       {isDetailOpen && selectedPo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -528,7 +518,6 @@ export const PurchaseOrdersPage: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Document Lifecycle Flow */}
               <div className="print:hidden">
                 <DocumentTimeline
                   steps={[
@@ -543,9 +532,7 @@ export const PurchaseOrdersPage: React.FC = () => {
                 />
               </div>
 
-              {/* Printable PO Sheet Layout (Section 22 Formatted Purchase Order) */}
               <div className="border border-slate-200 rounded-xl p-6 bg-white shadow-2xs space-y-6">
-                {/* Header with Company Logo & PO Banner */}
                 <div className="flex justify-between items-start border-b border-slate-200 pb-4">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 tracking-tight">
@@ -573,7 +560,6 @@ export const PurchaseOrdersPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Seller & Consignee Columns */}
                 <div className="grid grid-cols-2 gap-6 text-xs">
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
                     <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px] block">
@@ -597,7 +583,6 @@ export const PurchaseOrdersPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Items Table */}
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase border-b border-slate-200">
@@ -659,7 +644,6 @@ export const PurchaseOrdersPage: React.FC = () => {
                   </table>
                 </div>
 
-                {/* Terms and Signatures */}
                 <div className="grid grid-cols-2 gap-6 text-xs pt-4 border-t border-slate-200">
                   <div>
                     <span className="font-bold text-slate-700 block mb-1">
@@ -728,46 +712,42 @@ export const PurchaseOrdersPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Order Type</label>
-                  <select
+                  <CustomSelect
+                    options={[
+                      { label: 'STANDARD PO', value: 'STANDARD' },
+                      { label: 'RATE CONTRACT', value: 'RATE_CONTRACT' },
+                      { label: 'SERVICE ORDER', value: 'SERVICE' }
+                    ]}
                     value={formData.po_type}
-                    onChange={e => setFormData({ ...formData, po_type: e.target.value as any })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-blue-600"
-                  >
-                    <option value="STANDARD">STANDARD PO</option>
-                    <option value="RATE_CONTRACT">RATE CONTRACT</option>
-                    <option value="SERVICE">SERVICE ORDER</option>
-                  </select>
+                    onChange={val => setFormData({ ...formData, po_type: val })}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Vendor / Supplier *</label>
-                  <select
-                    required
+                  <CustomSelect
+                    options={vendors.map(v => ({ label: `${v.vendor_name} (${v.vendor_code})`, value: v.id }))}
                     value={formData.vendor_id}
-                    onChange={e => {
-                      const v = vendors.find(x => x.id === e.target.value);
+                    onChange={vendorId => {
+                      const v = vendors.find(x => x.id === vendorId);
                       setFormData({
                         ...formData,
-                        vendor_id: e.target.value,
+                        vendor_id: vendorId,
                         payment_terms: v?.payment_terms || formData.payment_terms,
                       });
                     }}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-800"
-                  >
-                    {vendors.map(v => (
-                      <option key={v.id} value={v.id}>{v.vendor_name} ({v.vendor_code})</option>
-                    ))}
-                  </select>
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Project & Site *</label>
-                  <select
-                    required
+                  <CustomSelect
+                    options={projects.map(p => ({ label: p.project_name, value: p.id }))}
                     value={formData.project_id}
-                    onChange={e => {
-                      const projId = e.target.value;
+                    onChange={projId => {
                       const site = sites.find(s => s.project_id === projId) || sites[0];
                       setFormData({
                         ...formData,
@@ -775,12 +755,8 @@ export const PurchaseOrdersPage: React.FC = () => {
                         site_id: site?.id || '',
                       });
                     }}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5"
-                  >
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>{p.project_name}</option>
-                    ))}
-                  </select>
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -802,17 +778,12 @@ export const PurchaseOrdersPage: React.FC = () => {
                     <div key={idx} className="grid grid-cols-12 gap-2 bg-white p-2.5 rounded-lg border border-slate-200 items-center">
                       <div className="col-span-3">
                         <label className="block text-[10px] text-slate-400 mb-0.5">Item *</label>
-                        <select
+                        <CustomSelect
+                          options={items.map(it => ({ label: `${it.item_code} - ${it.item_name}`, value: it.id }))}
                           value={item.item_id}
-                          onChange={e => handleItemSelect(idx, e.target.value)}
-                          className="w-full border border-slate-200 rounded-md p-1 text-xs"
-                        >
-                          {items.map(it => (
-                            <option key={it.id} value={it.id}>
-                              {it.item_code} - {it.item_name}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={itemId => handleItemSelect(idx, itemId)}
+                          className="w-full"
+                        />
                       </div>
 
                       <div className="col-span-1">
@@ -968,7 +939,7 @@ export const PurchaseOrdersPage: React.FC = () => {
         </div>
       )}
 
-      {/* PO Amendment Modal (Section 21) */}
+      {/* PO Amendment Modal */}
       {isAmendOpen && selectedPo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden">
