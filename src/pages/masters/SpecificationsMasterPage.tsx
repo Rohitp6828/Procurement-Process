@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { db } from '../../lib/db';
 import { MaterialSpecification, Item } from '../../types';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { BulkExcelUploadModal } from '../../components/common/BulkExcelUploadModal';
@@ -368,21 +369,22 @@ export const SpecificationsMasterPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-slate-600 font-semibold mb-1">Material Category *</label>
-                  <select
+                  <CustomSelect
+                    options={[
+                      { label: 'Steel & Metals', value: 'Steel & Metals' },
+                      { label: 'Cement & Binders', value: 'Cement & Binders' },
+                      { label: 'Aggregates & Sand', value: 'Aggregates' },
+                      { label: 'Concrete & Admixtures', value: 'Concrete' },
+                      { label: 'Masonry & Blocks', value: 'Masonry & Bricks' },
+                      { label: 'Plumbing & Drainage', value: 'Plumbing & Drainage' },
+                      { label: 'Electrical & MEP', value: 'Electrical & MEP' },
+                      { label: 'Finishing Materials', value: 'Finishing Materials' },
+                      { label: 'General Materials', value: 'General Materials' }
+                    ]}
                     value={formData.category}
-                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5"
-                  >
-                    <option value="Steel & Metals">Steel & Metals</option>
-                    <option value="Cement & Binders">Cement & Binders</option>
-                    <option value="Aggregates">Aggregates & Sand</option>
-                    <option value="Concrete">Concrete & Admixtures</option>
-                    <option value="Masonry & Bricks">Masonry & Blocks</option>
-                    <option value="Plumbing & Drainage">Plumbing & Drainage</option>
-                    <option value="Electrical & MEP">Electrical & MEP</option>
-                    <option value="Finishing Materials">Finishing Materials</option>
-                    <option value="General Materials">General Materials</option>
-                  </select>
+                    onChange={val => setFormData({ ...formData, category: val })}
+                    className="w-full"
+                  />
                 </div>
               </div>
 
